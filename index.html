@@ -685,5 +685,30 @@ table.xl td { border: 1px solid #d9dee3; padding: 4px 7px; white-space: nowrap; 
   if (!location.hash || location.hash === '#/' || location.hash === '#') mostrarIntro();
 })();
 </script>
+  <script>
+/* ---- Contador de visitas oculto: 5 clics seguidos en "Salir" muestran el total ---- */
+(function () {
+  const API = 'https://abacus.jasoncameron.dev', NS = 'verificador-demo-51a548b6';
+  const pedir = (op, key) => fetch(`${API}/${op}/${NS}/${key}`).then(r => r.ok ? r.json() : Promise.reject()).then(d => d.value);
+  const guardado = (s, k) => { try { return s.getItem(k); } catch (e) { return '1'; } };
+  const marcar = (s, k) => { try { s.setItem(k, '1'); } catch (e) {} };
+
+  // una visita por sesión del navegador; un visitante único por navegador
+  if (!guardado(sessionStorage, 'cv-visita')) { marcar(sessionStorage, 'cv-visita'); pedir('hit', 'visitas').catch(() => {}); }
+  if (!guardado(localStorage, 'cv-visitante')) { marcar(localStorage, 'cv-visitante'); pedir('hit', 'visitantes').catch(() => {}); }
+
+  const salir = document.querySelector('.topbar nav a.salir');
+  if (!salir) return;
+  let clics = 0, t;
+  salir.addEventListener('click', () => {
+    clics++; clearTimeout(t); t = setTimeout(() => clics = 0, 2500);
+    if (clics < 5) return;
+    clics = 0;
+    Promise.all([pedir('get', 'visitas'), pedir('get', 'visitantes')])
+      .then(([v, u]) => aviso(`👁 Visitas: ${v} · Visitantes únicos: ${u}`))
+      .catch(() => aviso('👁 Contador no disponible (sin conexión o bloqueado).'));
+  });
+})();
+</script>
 </body>
 </html>
